@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quizzer/data/question_list.dart';
+import 'package:quizzer/screen/result_screen.dart';
 
 void main() {
   runApp(const MainApp());
@@ -26,13 +27,27 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   Color mainColor = Colors.blueGrey.shade400;
   Color secondColor = Colors.grey.shade400;
+  PageController? _controller = PageController(initialPage: 0);
+  bool isPressed = false;
+  Color isTrue = Colors.green;
+  Color isWrong = Colors.red;
+  Color btnColor = Colors.grey.shade400;
+  int score = 0;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: mainColor,
       body: Padding(
-        padding: EdgeInsets.all(18.0),
+        padding: const EdgeInsets.all(18.0),
         child: PageView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          controller: _controller!,
+          onPageChanged: (page){
+            setState(() {
+              isPressed = false;
+            });
+          },
           itemCount: questions.length,
           itemBuilder:  (context, index) {
             return Column(
@@ -62,16 +77,33 @@ class _HomePageState extends State<HomePage> {
                 ),
                 ),
                 const SizedBox(height: 20,),
-
                 for(int i = 0; i < questions[index].answer!.length; i++)
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.only(bottom: 20.0),
                   child: MaterialButton(
                     shape: const StadiumBorder(),
-                    color: secondColor,
+                    color: isPressed
+                    ? questions[index].answer!.entries.toList()[i].value
+                        ? isTrue
+                        : isWrong
+                    :secondColor,
                     padding: const EdgeInsets.symmetric(vertical: 20),
-                    onPressed: (){},
+                    onPressed: isPressed
+                    ? (){}
+                    : (){
+                        setState(() {
+                      isPressed = true;
+                        });
+                      if(questions[index]
+                      .answer!
+                      .entries
+                      .toList()[i]
+                      .value){
+                        score += 10;
+                        print(score);
+                      }
+                    },
                     child: Text(questions[index].answer!.keys.toList()[i],
                     style: const TextStyle(
                       color: Colors.white,
@@ -79,15 +111,39 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 30,),
-                OutlinedButton(
-                  onPressed: (){},
-                  style: ButtonStyle(),
-                  child: const Text("NEXT",
-                  style: TextStyle(
-                    color: Colors.white,
-                  ),
-                  ),
+                const SizedBox(height: 40,),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton(
+                      onPressed: isPressed ? index + 1 == questions.length
+                      ? (){
+                        Navigator.push(context,
+                          MaterialPageRoute(
+                            builder: (context)=> ResultScreen(score)),
+                      );
+                      }
+                      : (){
+                        _controller!.nextPage(duration: const Duration(microseconds: 750), curve: Curves.easeInExpo);
+                        setState(() {
+                          isPressed = false;
+                        });
+                      }
+                      : null,
+                      style: OutlinedButton.styleFrom(
+                        shape: StadiumBorder(),
+                        side: BorderSide(color: Colors.orange,width: 1.0),
+                      ),
+                      child:  Text(
+                        index + 1 == questions.length
+                            ? "End"
+                            : "Next",
+                      style: TextStyle(
+                        color: Colors.white,
+                      ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             );
